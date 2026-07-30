@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>P6 · Escotilla de Observación — El Submarino · Eonesia</title>
+<style>
+:root{
+  --abismo:#04121C; --casco:#0B2533; --casco2:#123647; --casco3:#16455C;
+  --linea:#1F4A5F; --linea2:#2E6379;
+  --bronce:#B08D57; --bronce2:#7A5C33; --laton:#D9B36C; --laton2:#F0D49A;
+  --ambar:#FFB454; --agua:#3FB7C9; --agua2:#7FE3EF;
+  --ok:#59D9A0; --err:#FF7A66;
+  --texto:#E7F3F7; --texto2:#9FBCC8;
+  --tam-base:17px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{font-size:var(--tam-base);}
+body{
+  font-family:Georgia,"Times New Roman",serif;
+  background:
+    radial-gradient(1100px 500px at 78% -10%, rgba(63,183,201,0.08), transparent 60%),
+    radial-gradient(900px 700px at -10% 110%, rgba(11,58,74,0.55), transparent 65%),
+    var(--abismo);
+  color:var(--texto); min-height:100vh; padding:14px;
+  touch-action:pan-y;
+}
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 118px, rgba(31,74,95,0.35) 118px 121px),
+    repeating-linear-gradient(90deg, transparent 0 178px, rgba(31,74,95,0.28) 178px 181px);
+}
+#luz-emergencia{
+  position:fixed; inset:0; pointer-events:none; z-index:1; opacity:0.55;
+  background:radial-gradient(700px 380px at 50% -120px, rgba(255,180,84,0.20), transparent 70%);
+  animation:latido 4.5s ease-in-out infinite;
+}
+@keyframes latido{0%,100%{opacity:0.35;}50%{opacity:0.7;}}
+@media (prefers-reduced-motion: reduce){
+  #luz-emergencia{animation:none;opacity:0.45;}
+  *{transition-duration:0.01s !important;}
+}
+#app{position:relative; z-index:4; max-width:1180px; margin:0 auto;}
+h1{font-size:1.28rem; letter-spacing:0.06em; color:var(--laton2);}
+h2{font-size:1.12rem; color:var(--agua2); margin-bottom:8px;}
+h3{font-size:0.95rem; color:var(--laton); margin:10px 0 6px;}
+p{line-height:1.55; margin-bottom:8px;}
+.suave{color:var(--texto2); font-size:0.9rem;}
+.rotulo{font-family:"Consolas","Courier New",monospace; font-size:0.72rem; letter-spacing:0.12em; color:var(--texto2);}
+.consola{
+  font-family:"Consolas","Courier New",monospace; font-size:0.86rem; line-height:1.7;
+  color:var(--ambar); background:#031017; border:1px solid var(--linea);
+  border-left:4px solid var(--ambar); border-radius:8px; padding:12px 14px; margin:10px 0;
+  text-shadow:0 0 8px rgba(255,180,84,0.35);
+}
+.consola .ok{color:var(--ok); text-shadow:0 0 8px rgba(89,217,160,0.4);}
+.parpadeo{animation:parp 1s steps(2) infinite;}
+@keyframes parp{to{visibility:hidden;}}
+.marco{
+  position:relative; background:linear-gradient(180deg, var(--casco2), var(--casco));
+  border:2px solid var(--bronce2); border-radius:14px;
+  padding:18px 20px 20px; margin-bottom:14px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 26px rgba(0,0,0,0.45);
+}
+.remaches, .remaches-b{position:absolute; inset:8px; pointer-events:none; border-radius:10px;}
+.remaches::before,.remaches::after,.remaches-b::before,.remaches-b::after{
+  content:""; position:absolute; width:9px; height:9px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, var(--laton), var(--bronce2) 70%);
+  box-shadow:0 1px 2px rgba(0,0,0,0.7);
+}
+.remaches::before{top:0;left:0;} .remaches::after{top:0;right:0;}
+.remaches-b::before{bottom:0;left:0;} .remaches-b::after{bottom:0;right:0;}
+#barra{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;}
+#barra .relleno{flex:1;}
+button{
+  font-family:inherit; font-size:0.92rem; color:var(--texto); cursor:pointer;
+  min-height:48px; min-width:48px; border-radius:10px;
+  border:2px solid var(--bronce2);
+  background:linear-gradient(180deg, #275166, #16394b);
+  padding:10px 16px; touch-action:manipulation;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.12), 0 3px 8px rgba(0,0,0,0.4);
+}
+button:hover{filter:brightness(1.12);}
+button:active{transform:translateY(1px);}
+button:focus-visible{outline:3px solid var(--agua2); outline-offset:2px;}
+button:disabled{opacity:0.45; cursor:not-allowed; filter:none;}
+button.laton{
+  background:linear-gradient(180deg, var(--laton), var(--bronce));
+  color:#241703; border-color:#5c4526; font-weight:bold;
+}
+button.mini{min-height:44px; padding:8px 12px; font-size:0.8rem;}
+.oculto{display:none !important;}
+.pulso{animation:pulsoAnim 1.1s ease-in-out infinite; position:relative; z-index:3;}
+@keyframes pulsoAnim{
+  0%,100%{box-shadow:0 0 0 0 rgba(127,227,239,0.85);}
+  50%{box-shadow:0 0 0 10px rgba(127,227,239,0);}
+}
+.fila-botones{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;}
+#aviso-sala{
+  border-left:4px solid var(--agua); background:rgba(6,24,34,0.85);
+  padding:10px 14px; border-radius:0 8px 8px 0; margin-top:12px; min-height:48px;
+  font-size:0.92rem;
+}
+#aviso-sala.okc{border-left-color:var(--ok);}
+#aviso-sala.ambar{border-left-color:var(--ambar);}
+#aviso-sala.err{border-left-color:var(--err);}
+#barrido{position:fixed; inset:0; pointer-events:none; z-index:50; opacity:0;
+  background:linear-gradient(105deg, transparent 20%, rgba(127,227,239,0.5) 50%, transparent 80%);
+  transform:translateX(-100%);}
+#barrido.activo{animation:barrer 0.7s ease-in-out forwards;}
+@keyframes barrer{0%{opacity:1; transform:translateX(-100%);}100%{opacity:0; transform:translateX(100%);}}
+@media (prefers-reduced-motion: reduce){#barrido.activo{animation:none; opacity:0;}}
+#velo-docente{position:fixed; inset:0; background:rgba(2,10,16,0.92); z-index:60;
+  display:none; padding:20px; overflow:auto;}
+#velo-docente.visible{display:block;}
+#velo-docente pre{
+  font-family:"Consolas",monospace; font-size:0.8rem; color:var(--texto);
+  white-space:pre-wrap; background:var(--casco); border:1px solid var(--linea);
+  border-radius:8px; padding:14px; max-width:900px; margin:0 auto 14px;
+}
+.credito{margin-top:10px; font-size:0.68rem; color:var(--texto2); font-family:"Consolas",monospace;}
+.tabla-capas{width:100%; border-collapse:collapse; margin:8px 0; font-size:0.9rem;}
+.tabla-capas th,.tabla-capas td{border:1px solid var(--linea); padding:8px 10px; text-align:left;}
+.tabla-capas th{color:var(--laton2); font-family:"Consolas",monospace; font-size:0.72rem; letter-spacing:0.08em;}
+#enlace-salida{
+  display:inline-block; margin-top:6px; color:#241703; font-weight:bold; text-decoration:none;
+  background:linear-gradient(180deg, var(--laton), var(--bronce));
+  border:2px solid #5c4526; border-radius:10px; padding:12px 18px; min-height:48px;
+}
+/* ================= P6 · ESCOTILLA DE OBSERVACIÓN ================= */
+#escotilla{display:grid; grid-template-columns:1fr; gap:14px;}
+@media(min-width:980px){#escotilla{grid-template-columns:1fr 320px;}}
+.puesto{
+  background:linear-gradient(180deg, #0D2A3A, #081D29);
+  border:2px solid var(--linea); border-radius:12px; padding:12px;
+}
+canvas.instrumento{display:block; width:100%; height:auto; border-radius:8px;}
+.organismos-fila{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;}
+.chip-org{
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  border:2px solid var(--linea2); border-radius:10px; padding:8px 10px;
+  background:rgba(4,18,26,0.6); min-width:84px;
+}
+.chip-org.sel{border-color:var(--agua2); box-shadow:0 0 12px rgba(127,227,239,0.5);}
+.chip-org.clasificado{border-color:var(--ok); opacity:0.5;}
+.chip-org .ic{width:38px; height:38px;}
+.chip-org .nombre-org{font-size:0.68rem; text-align:center; color:var(--texto2);}
+.capas-destino{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;}
+.capa-destino{
+  flex:1; min-width:150px; border:2px solid var(--linea2); border-radius:10px;
+  padding:10px; text-align:center; font-family:"Consolas",monospace; font-size:0.76rem;
+  color:var(--texto2); cursor:pointer;
+}
+.capa-destino.activa{border-color:var(--agua2); box-shadow:0 0 10px rgba(127,227,239,0.4);}
+.capa-destino .lista-org{margin-top:6px; display:flex; flex-wrap:wrap; gap:4px; justify-content:center;}
+</style>
+</head>
+<body>
+<div id="luz-emergencia" aria-hidden="true"></div>
+<div id="barrido" aria-hidden="true"></div>
+<div id="app" aria-live="off"></div>
+<div id="velo-docente" role="dialog" aria-label="Registro para el docente">
+  <pre id="texto-docente"></pre>
+  <div style="text-align:center;"><button class="laton" id="btn-cerrar-docente" type="button">Cerrar</button></div>
+</div>
+<script>
+"use strict";
+/* ============================================================
+   NÚCLEO DE SEGURIDAD (token de generación) — pantalla independiente
+   ============================================================ */
+var S = {
+  fase: "intro", silencio: false, dossierLeido: false,
+  anomaliaPresente: Math.random() < 0.5,   // decidido aquí mismo, sin depender de ninguna otra pantalla
+  intensidadFoco: 0.5,
+  clasificaciones: {},           // { organismoId: capaId }
+  anomaliaDetectada: false,
+  errores: { p1: 0, p2: 0, p3: 0 },
+  seleccionado: null
+};
+var GEN = 0;
+function T(fn, ms){ var g = GEN; return setTimeout(function(){ if (g === GEN) fn(); }, ms); }
+function I(fn, ms){
+  var g = GEN;
+  var id = setInterval(function(){ if (g !== GEN){ clearInterval(id); return; } fn(); }, ms);
+  return id;
+}
+function RAF(fn){ var g = GEN; requestAnimationFrame(function(ts){ if (g === GEN) fn(ts); }); }
+function limpiar(){ GEN++; }
+function irA(fase){ limpiar(); S.fase = fase; render(); }
+function reducido(){ try{ return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){ return false; } }
+function irAConBarrido(fase){
+  var b = document.getElementById("barrido");
+  if (b && !reducido()){
+    b.classList.remove("activo"); void b.offsetWidth; b.classList.add("activo");
+    sonar(); T(function(){ irA(fase); }, 340); T(function(){ b.classList.remove("activo"); }, 760);
+  } else { sonar(); irA(fase); }
+}
+function $(id){ return document.getElementById(id); }
+function esc(t){ return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+/* ---------- audio ---------- */
+var actx = null;
+function audioCtx(){
+  if (S.silencio) return null;
+  try{
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === "suspended") actx.resume();
+    return actx;
+  }catch(e){ return null; }
+}
+function pip(freq, dur, tipo, vol){
+  var a = audioCtx(); if (!a) return;
+  var o = a.createOscillator(), g = a.createGain();
+  o.type = tipo || "sine"; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, a.currentTime);
+  g.gain.linearRampToValueAtTime(vol || 0.1, a.currentTime + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + (dur || 0.15));
+  o.connect(g).connect(a.destination);
+  o.start(); o.stop(a.currentTime + (dur || 0.15) + 0.05);
+}
+function clink(){ pip(1450, 0.09, "triangle", 0.08); setTimeout(function(){ pip(980, 0.12, "sine", 0.05); }, 40); }
+function sonar(){ pip(620, 0.35, "sine", 0.07); setTimeout(function(){ pip(880, 0.5, "sine", 0.04); }, 220); }
+function alarma(){ pip(340, 0.25, "square", 0.09); setTimeout(function(){ pip(340, 0.25, "square", 0.09); }, 320); }
+function exito(){ pip(392, 0.14, "triangle", 0.1); setTimeout(function(){ pip(523, 0.14, "triangle", 0.1); }, 130); setTimeout(function(){ pip(659, 0.26, "triangle", 0.12); }, 260); }
+function alternarSilencio(){
+  S.silencio = !S.silencio;
+  var b = $("btn-silencio");
+  if (b){
+    b.textContent = S.silencio ? "Sonido: apagado" : "Sonido: encendido";
+    b.setAttribute("aria-pressed", S.silencio ? "true" : "false");
+  }
+}
+function ajustarTexto(d){
+  var r = document.documentElement;
+  var v = parseFloat(getComputedStyle(r).getPropertyValue("--tam-base")) || 17;
+  r.style.setProperty("--tam-base", Math.min(24, Math.max(14, v + d)) + "px");
+}
+
+/* ---------- estado compartido con P7, por URL (sin localStorage) ---------- */
+function calcularCodigoEcosistema(){
+  return S.anomaliaPresente ? "ECOS-OLEO" : "ECOS-CLAR";
+}
+
+function barraHTML(sub){
+  return '<div id="barra">' +
+    '<div><h1>Escotilla de Observación</h1><div class="rotulo">' + esc(sub || "EL SUBMARINO · EONESIA") + '</div></div>' +
+    '<div class="relleno"></div>' +
+    '<button class="mini" type="button" onclick="ajustarTexto(1)" aria-label="Aumentar tamaño del texto">A+</button>' +
+    '<button class="mini" type="button" onclick="ajustarTexto(-1)" aria-label="Reducir tamaño del texto">A−</button>' +
+    '<button class="mini" id="btn-silencio" type="button" onclick="alternarSilencio()" aria-pressed="' + (S.silencio ? "true" : "false") + '">' +
+      (S.silencio ? "Sonido: apagado" : "Sonido: encendido") + '</button>' +
+    '</div>';
+}
+function avisoSala(texto, clase){
+  var a = $("aviso-sala"); if (!a) return;
+  a.textContent = texto; a.className = clase || ""; a.id = "aviso-sala";
+}
+
+/* ============================================================
+   DATOS CERRADOS: capas y organismos
+   ============================================================ */
+var CAPAS = [
+  { id:"fotica",    nombre:"Fótica (0-200 m)",        luz:"Alta",                     temp:"Templada" },
+  { id:"disfotica", nombre:"Disfótica (200-1000 m)",  luz:"Escasa, crepuscular",      temp:"Fría" },
+  { id:"afotica",   nombre:"Afótica (+1000 m)",       luz:"Nula (solo bioluminiscencia)", temp:"Muy fría" }
+];
+var ORGANISMOS = [
+  { id:"pez_luna",    nombre:"Pez luna",           capa:"fotica",    biolum:false },
+  { id:"tortuga",     nombre:"Tortuga marina",     capa:"fotica",    biolum:false },
+  { id:"calamar_v",   nombre:"Calamar vampiro",    capa:"disfotica", biolum:true  },
+  { id:"pez_dragon",  nombre:"Pez dragón",         capa:"afotica",   biolum:true  },
+  { id:"medusa_luz",  nombre:"Medusa luminiscente",capa:"disfotica", biolum:true  }
+];
+function iconoOrganismo(id, t){
+  t = t || 34;
+  var formas = {
+    pez_luna:'<path d="M4 20 Q14 6 30 20 Q14 34 4 20 Z" fill="#E8C98A" stroke="#8A6a3a" stroke-width="1.6"/><circle cx="12" cy="18" r="1.6" fill="#2a2015"/>',
+    tortuga:'<ellipse cx="18" cy="20" rx="13" ry="9" fill="#6E9A5E" stroke="#3E5C34" stroke-width="1.6"/><path d="M6 20 l-5 -3 M6 22 l-5 3 M30 20 l5 -3 M30 22 l5 3" stroke="#3E5C34" stroke-width="1.6"/>',
+    calamar_v:'<path d="M18 6 Q28 14 24 26 L18 34 L12 26 Q8 14 18 6 Z" fill="#7A3E6E" stroke="#4A1E42" stroke-width="1.6"/><circle cx="14" cy="16" r="1.8" fill="#BFF0F8"/><circle cx="22" cy="16" r="1.8" fill="#BFF0F8"/>',
+    pez_dragon:'<path d="M4 20 Q16 10 32 20 Q16 30 4 20 Z" fill="#1A2A30" stroke="#3FB7C9" stroke-width="1.4"/><circle cx="10" cy="18" r="1.4" fill="#7FE3EF"/><circle cx="16" cy="24" r="1" fill="#7FE3EF"/><circle cx="24" cy="16" r="1" fill="#7FE3EF"/>',
+    medusa_luz:'<path d="M10 16 Q18 4 26 16 Q26 22 18 22 Q10 22 10 16 Z" fill="#3FB7C9" stroke="#7FE3EF" stroke-width="1.4"/><path d="M14 22 L13 32 M18 22 L18 33 M22 22 L23 32" stroke="#7FE3EF" stroke-width="1.4" stroke-linecap="round"/>'
+  };
+  return '<svg viewBox="0 0 36 36" width="' + t + '" height="' + t + '" aria-hidden="true">' + (formas[id] || '') + '</svg>';
+}
+var PAT = { p1: 0, p2: 0, p3: 0 };
+
+/* ============================================================
+   ENTRADA CINEMATOGRÁFICA
+   ============================================================ */
+function renderIntro(){
+  $("app").innerHTML = barraHTML() +
+    '<div class="marco"><span class="remaches"></span><span class="remaches-b"></span>' +
+    '<div class="consola" id="consola-intro" aria-label="Registro del sistema"></div>' +
+    '<div class="fila-botones"><button class="laton" id="btn-entrar" type="button">Abrir la escotilla</button></div>' +
+    '</div>';
+  var lineas = [
+    "> ESCOTILLA DE OBSERVACION — REGISTRO DE ECOSISTEMA PENDIENTE",
+    "> Ventanal circular activo. Oscuridad casi total al otro lado.",
+    "> Documentad lo que el mar os muestra. Ajustad el foco: no todo se ve igual a toda intensidad<span class='parpadeo'>_</span>"
+  ];
+  var c = $("consola-intro"), i = 0;
+  function sig(){
+    if (!c.isConnected) return;
+    if (i < lineas.length){
+      var d = document.createElement("div");
+      d.innerHTML = lineas[i]; c.appendChild(d);
+      pip(240 + i * 40, 0.05, "square", 0.045);
+      i++; T(sig, 620);
+    }
+  }
+  T(sig, 300);
+  pip(70, 1.6, "sine", 0.05);
+  $("btn-entrar").addEventListener("click", function(){ audioCtx(); irAConBarrido("dossier"); });
+}
+
+/* ============================================================
+   DOSSIER DE CAPAS
+   ============================================================ */
+function renderDossier(){
+  var filas = CAPAS.map(function(c){
+    return '<tr><td>' + esc(c.nombre) + '</td><td>' + esc(c.luz) + '</td><td>' + esc(c.temp) + '</td></tr>';
+  }).join("");
+  $("app").innerHTML = barraHTML("PANEL DE INVESTIGACION · capas oceanicas reales") +
+    '<div class="marco"><span class="remaches"></span><span class="remaches-b"></span>' +
+    '<h2>Las tres capas del océano</h2>' +
+    '<table class="tabla-capas"><tr><th>Capa</th><th>Luz</th><th>Temperatura</th></tr>' + filas + '</table>' +
+    '<div class="consola">&gt; Clasificad SIEMPRE por luz y temperatura, nunca por parecido visual.<br>' +
+    '&gt; Los organismos bioluminiscentes solo se dejan ver con poca luz de foco — huyen si el foco es intenso.</div>' +
+    '<div class="fila-botones"><button class="laton pulso" id="btn-al-ventanal" type="button">Al ventanal de observación</button></div>' +
+    '<div id="aviso-sala" aria-live="polite">Leed la tabla antes de girar el foco: la clasificación se basa en estos datos, no en el aspecto.</div>' +
+    '<div class="credito">Ilustraciones vectoriales propias del motor · organismos reales del ecosistema profundo</div>' +
+    '</div>';
+  $("btn-al-ventanal").addEventListener("click", function(){ audioCtx(); S.dossierLeido = true; irAConBarrido("ventanal"); });
+}
+
+/* ============================================================
+   EL VENTANAL: foco + clasificación + anomalía condicional
+   ============================================================ */
+var V = null;
+function estadoVentanal(){
+  if (!V){
+    V = {
+      foco: 0.5, girando: null, focoVisualAng: 0, acumClic: 0,
+      manchaX: 230, manchaY: 150, manchaTocada: false,
+      t: 0, ultimoTs: null
+    };
+  }
+  return V;
+}
+function organismoVisible(o, foco){
+  if (!o.biolum) return foco > 0.18; // necesita algo de luz para verse, pero no biolum
+  return foco < 0.45; // los bioluminiscentes huyen con foco intenso
+}
+function renderVentanal(){
+  if (!S.dossierLeido){ irA("dossier"); return; }
+  var v = estadoVentanal();
+  var chips = ORGANISMOS.map(function(o){
+    var clasificado = S.clasificaciones[o.id];
+    return '<button type="button" class="chip-org' + (S.seleccionado===o.id?" sel":"") + (clasificado?" clasificado":"") + '" ' +
+      'id="org-' + o.id + '" data-org="' + o.id + '" ' + (clasificado ? "disabled" : "") + ' ' +
+      'aria-label="' + esc(o.nombre) + (clasificado ? ", ya clasificado" : ", tocad para seleccionar") + '">' +
+      '<span class="ic">' + iconoOrganismo(o.id, 34) + '</span>' +
+      '<span class="nombre-org">' + esc(o.nombre) + '</span></button>';
+  }).join("");
+  var destinos = CAPAS.map(function(c){
+    var puestos = ORGANISMOS.filter(function(o){ return S.clasificaciones[o.id] === c.id; });
+    return '<div class="capa-destino" id="dest-' + c.id + '" data-capa="' + c.id + '" tabindex="0" role="button" ' +
+      'aria-label="Clasificar en ' + esc(c.nombre) + '">' + esc(c.nombre) +
+      '<div class="lista-org">' + puestos.map(function(o){ return iconoOrganismo(o.id, 22); }).join("") + '</div></div>';
+  }).join("");
+  $("app").innerHTML = barraHTML("VENTANAL · foco y clasificacion") +
+    '<div class="marco"><span class="remaches"></span><span class="remaches-b"></span>' +
+    '<div id="escotilla">' +
+      '<div class="puesto">' +
+        '<canvas id="c-ventana" class="instrumento" width="460" height="300" aria-label="Ventanal de observacion con foco ajustable"></canvas>' +
+        '<div class="organismos-fila" aria-label="Organismos por clasificar">' + chips + '</div>' +
+        '<h3>Clasificad cada organismo en su capa</h3>' +
+        '<div class="capas-destino">' + destinos + '</div>' +
+      '</div>' +
+      '<div class="puesto" style="display:flex;flex-direction:column;align-items:center;gap:10px;">' +
+        '<span class="rotulo">RUEDA DEL FOCO EXTERIOR</span>' +
+        '<canvas id="c-rueda-foco" width="180" height="180" style="touch-action:none;cursor:grab;border-radius:50%;" tabindex="0" role="slider" aria-label="Rueda del foco: arrastrad en circulo o usad las flechas. Mas giro, mas intensidad." aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"></canvas>' +
+        '<span class="rotulo" id="valor-foco">INTENSIDAD 50%</span>' +
+        '<div class="fila-botones">' +
+          '<button class="mini" id="btn-pista" type="button">Pista</button>' +
+          '<button class="mini" id="btn-dossier2" type="button">Dossier de capas</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div id="aviso-sala" aria-live="polite">Girad la rueda para ajustar el foco. Arrastrad cada organismo visible hasta la capa correcta segun sus datos.</div>' +
+    '</div>';
+  $("app").innerHTML.length; // noop, evita optimizaciones agresivas de algunos entornos
+
+  var cv = $("c-ventana"), xv = cv.getContext("2d");
+  var cr = $("c-rueda-foco"), xr = cr.getContext("2d");
+
+  function anguloDe(ev, cnv){
+    var r = cnv.getBoundingClientRect();
+    return Math.atan2(ev.clientY - (r.top + r.height / 2), ev.clientX - (r.left + r.width / 2)) * 180 / Math.PI;
+  }
+  function aplicarGiro(dg){
+    v.foco = Math.max(0, Math.min(1, v.foco + dg / 720));
+    v.focoVisualAng += dg;
+    v.acumClic += Math.abs(dg);
+    while (v.acumClic >= 30){ v.acumClic -= 30; pip(200 + Math.random()*30, 0.02, "triangle", 0.025); }
+    $("valor-foco").textContent = "INTENSIDAD " + Math.round(v.foco * 100) + "%";
+    cr.setAttribute("aria-valuenow", Math.round(v.foco * 100));
+  }
+  cr.addEventListener("pointerdown", function(ev){
+    ev.preventDefault(); audioCtx(); cr.setPointerCapture(ev.pointerId);
+    v.girando = anguloDe(ev, cr); cr.style.cursor = "grabbing";
+  });
+  cr.addEventListener("pointermove", function(ev){
+    if (v.girando === null) return;
+    var a = anguloDe(ev, cr), d = a - v.girando;
+    if (d > 180) d -= 360; if (d < -180) d += 360;
+    v.girando = a; aplicarGiro(d);
+  });
+  function soltarRueda(){ v.girando = null; cr.style.cursor = "grab"; }
+  cr.addEventListener("pointerup", soltarRueda);
+  cr.addEventListener("pointercancel", soltarRueda);
+  cr.addEventListener("keydown", function(ev){
+    if (ev.key === "ArrowUp" || ev.key === "ArrowRight"){ ev.preventDefault(); audioCtx(); aplicarGiro(30); }
+    if (ev.key === "ArrowDown" || ev.key === "ArrowLeft"){ ev.preventDefault(); audioCtx(); aplicarGiro(-30); }
+  });
+
+  // seleccion de organismo (tocar chip, luego tocar capa)
+  Array.prototype.forEach.call(document.querySelectorAll("[data-org]"), function(b){
+    b.addEventListener("click", function(){
+      audioCtx();
+      var id = this.getAttribute("data-org");
+      var o = ORGANISMOS.filter(function(x){ return x.id === id; })[0];
+      if (!organismoVisible(o, v.foco)){
+        if (o.biolum && v.foco >= 0.45){
+          PAT.p1++; S.errores.p1++; alarma();
+          avisoSala("Con el foco tan intenso, " + o.nombre.toLowerCase() + " se esconde. Bajad el foco y observad de nuevo.", "err");
+        } else {
+          avisoSala("Con tan poca luz, apenas se distingue. Subid un poco el foco para ese organismo.", "");
+        }
+        return;
+      }
+      S.seleccionado = (S.seleccionado === id) ? null : id;
+      renderVentanal();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-capa]"), function(d){
+    function elegir(){
+      audioCtx();
+      if (!S.seleccionado) { avisoSala("Tocad primero un organismo visible en el ventanal.", ""); return; }
+      var capaId = this.getAttribute("data-capa");
+      var o = ORGANISMOS.filter(function(x){ return x.id === S.seleccionado; })[0];
+      if (capaId === o.capa){
+        S.clasificaciones[o.id] = capaId;
+        S.seleccionado = null;
+        exito();
+        var nombreCapa = CAPAS.filter(function(c){return c.id===capaId;})[0].nombre;
+        renderVentanal();
+        avisoSala(o.nombre + " clasificado en " + nombreCapa + ". Correcto según luz y temperatura.", "okc");
+        if (Object.keys(S.clasificaciones).length === ORGANISMOS.length) T(comprobarCierre, 900);
+      } else {
+        PAT.p2++; S.errores.p2++; alarma();
+        avisoSala("Comparad con la ficha: ¿qué luz y temperatura tiene esa capa? El parecido visual no basta.", "err");
+      }
+    }
+    d.addEventListener("click", elegir);
+    d.addEventListener("keydown", function(ev){ if (ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); elegir.call(this); } });
+  });
+
+  $("btn-pista").addEventListener("click", function(){
+    audioCtx();
+    if (v.foco > 0.6) avisoSala("A demasiada luz, los organismos bioluminiscentes huyen. Bajad el foco y observad de nuevo.", "ambar");
+    else avisoSala("Comparad siempre con la ficha de luz y temperatura del dossier, nunca por parecido visual.", "ambar");
+  });
+  $("btn-dossier2").addEventListener("click", function(){ audioCtx(); irAConBarrido("dossier"); });
+
+  function comprobarCierre(){
+    if (S.anomaliaPresente && !S.anomaliaDetectada){
+      PAT.p3++; S.errores.p3++;
+      avisoSala("Algo cambio respecto al dossier inicial en una zona del ventanal. Observad con cuidado antes de continuar.", "ambar");
+      return;
+    }
+    irAConBarrido("cierre");
+  }
+
+  function bucle(ts){
+    if (v.ultimoTs === null) v.ultimoTs = ts;
+    var dt = Math.min(0.05, (ts - v.ultimoTs) / 1000);
+    v.ultimoTs = ts; v.t += dt;
+
+    // rueda del foco
+    xr.clearRect(0, 0, 180, 180);
+    xr.save(); xr.translate(90, 90); xr.rotate(v.focoVisualAng * Math.PI / 180);
+    var g = xr.createRadialGradient(-14, -14, 6, 0, 0, 70);
+    g.addColorStop(0, "#E8C98A"); g.addColorStop(0.6, "#B08D57"); g.addColorStop(1, "#6E5330");
+    xr.strokeStyle = g; xr.lineWidth = 12;
+    xr.beginPath(); xr.arc(0, 0, 60, 0, 7); xr.stroke();
+    xr.lineWidth = 8; xr.lineCap = "round";
+    for (var s = 0; s < 6; s++){
+      var a = s * Math.PI / 3;
+      xr.beginPath(); xr.moveTo(Math.cos(a) * 12, Math.sin(a) * 12);
+      xr.lineTo(Math.cos(a) * 54, Math.sin(a) * 54); xr.stroke();
+    }
+    xr.beginPath(); xr.arc(0, 0, 15, 0, 7); xr.fillStyle = g; xr.fill();
+    xr.strokeStyle = "#5c4526"; xr.lineWidth = 2; xr.stroke();
+    xr.restore();
+
+    // ventanal: fondo oscuro + foco radial + organismos + mancha condicional
+    xv.clearRect(0, 0, 460, 300);
+    xv.fillStyle = "#020a10"; xv.fillRect(0, 0, 460, 300);
+    var cx = 230, cy = 150, radioFoco = 30 + v.foco * 190;
+    var grad = xv.createRadialGradient(cx, cy, radioFoco * 0.15, cx, cy, radioFoco);
+    grad.addColorStop(0, "rgba(191,240,248,0.28)"); grad.addColorStop(1, "rgba(191,240,248,0)");
+    xv.fillStyle = grad; xv.beginPath(); xv.arc(cx, cy, radioFoco, 0, 7); xv.fill();
+
+    // mancha de aceite condicional
+    if (S.anomaliaPresente){
+      xv.fillStyle = "rgba(26,26,10,0.55)";
+      xv.beginPath(); xv.ellipse(v.manchaX, v.manchaY, 46, 30, 0.3, 0, 7); xv.fill();
+      if (!S.anomaliaDetectada){
+        xv.strokeStyle = "rgba(255,180,84," + (0.4 + 0.3*Math.sin(v.t*3)) + ")"; xv.lineWidth = 2;
+        xv.beginPath(); xv.ellipse(v.manchaX, v.manchaY, 50, 34, 0.3, 0, 7); xv.stroke();
+      }
+    }
+
+    // posiciones fijas de los organismos dentro del ventanal
+    var posiciones = { pez_luna:[100,80], tortuga:[360,90], calamar_v:[150,190], pez_dragon:[320,210], medusa_luz:[230,60] };
+    ORGANISMOS.forEach(function(o){
+      var pos = posiciones[o.id]; if (!pos) return;
+      var dentroFoco = Math.hypot(pos[0]-cx, pos[1]-cy) < radioFoco;
+      var visible = dentroFoco && organismoVisible(o, v.foco);
+      var clasificado = S.clasificaciones[o.id];
+      xv.save();
+      xv.globalAlpha = clasificado ? 0.25 : (visible ? 1 : 0.06);
+      xv.translate(pos[0]-17, pos[1]-17);
+      // reutilizamos el icono como trazo simple directamente en canvas (silueta minima)
+      xv.fillStyle = o.biolum ? "#7FE3EF" : "#D9B36C";
+      xv.beginPath(); xv.ellipse(17, 17, 15, 9, 0, 0, 7); xv.fill();
+      if (S.seleccionado === o.id){ xv.strokeStyle = "#FFB454"; xv.lineWidth = 2; xv.beginPath(); xv.ellipse(17,17,19,13,0,0,7); xv.stroke(); }
+      xv.restore();
+    });
+
+    RAF(bucle);
+  }
+  RAF(bucle);
+
+  cv.addEventListener("click", function(ev){
+    if (!S.anomaliaPresente || S.anomaliaDetectada) return;
+    var r = cv.getBoundingClientRect();
+    var x = (ev.clientX - r.left) * (460/r.width), y = (ev.clientY - r.top) * (300/r.height);
+    if (Math.hypot(x - v.manchaX, y - v.manchaY) < 50){
+      S.anomaliaDetectada = true;
+      exito();
+      avisoSala("Mancha de aceite anotada en el registro. Los organismos la evitan visiblemente: queda documentada.", "okc");
+      if (Object.keys(S.clasificaciones).length === ORGANISMOS.length) T(comprobarCierre, 900);
+    }
+  });
+}
+
+/* ============================================================
+   CIERRE
+   ============================================================ */
+function renderCierre(){
+  var codigo = calcularCodigoEcosistema();
+  $("app").innerHTML = barraHTML("REGISTRO DE ECOSISTEMA COMPLETO") +
+    '<div class="marco"><span class="remaches"></span><span class="remaches-b"></span>' +
+    '<div class="consola">&gt; CLASIFICACION DE ORGANISMOS ......... <span class="ok">' + ORGANISMOS.length + ' / ' + ORGANISMOS.length + ' COMPLETA</span><br>' +
+    (S.anomaliaPresente ? '&gt; ANOMALIA AMBIENTAL ..................... <span class="ok">DOCUMENTADA</span><br>' : '&gt; SIN ANOMALIAS DETECTADAS: CASCO INTACTO<br>') +
+    '&gt; Codigo de esta sala generado. Apuntadlo para el Puente de Mando<span class="parpadeo">_</span></div>' +
+    '<h2>Lo que documentasteis</h2>' +
+    '<p>Clasificasteis cada organismo por su luz y temperatura reales, no por su aspecto. ' +
+    (S.anomaliaPresente ? 'Y detectasteis algo que no encajaba con el dossier inicial: una mancha que los propios organismos evitaban.' : 'El ecosistema que visteis coincidia por completo con lo esperado.') + '</p>' +
+    '<div class="marco" style="margin-top:14px; text-align:center; background:linear-gradient(180deg,#123647,#0B2533);">' +
+      '<span class="rotulo">CÓDIGO DE ACCESO · ECOSISTEMA</span>' +
+      '<div style="font-family:Consolas,monospace; font-size:1.8rem; letter-spacing:0.12em; color:var(--laton2); margin-top:8px;">' + codigo + '</div>' +
+    '</div>' +
+    '<div class="credito">Registro docente: Ctrl + Mayús + D · Pantalla independiente, sin estado compartido por URL</div>' +
+    '</div>';
+  exito(); T(function(){ sonar(); }, 500);
+}
+
+/* ============================================================
+   REGISTRO DOCENTE Y ENRUTADOR
+   ============================================================ */
+function registroDocente(){
+  return [
+    "REGISTRO DOCENTE · P6 ESCOTILLA DE OBSERVACION (EL SUBMARINO)",
+    "",
+    "Anomalia presente esta sesion: " + (S.anomaliaPresente ? "si" : "no"),
+    "Clasificaciones: " + Object.keys(S.clasificaciones).length + " / " + ORGANISMOS.length,
+    "Anomalia detectada: " + (S.anomaliaPresente ? (S.anomaliaDetectada ? "si" : "no, pendiente") : "no aplica"),
+    "",
+    "Patron 1 (foco al maximo, no ve bioluminiscentes): " + PAT.p1,
+    "Patron 2 (clasifica por parecido visual): " + PAT.p2,
+    "Patron 3 (ignora la mancha de aceite): " + PAT.p3
+  ].join("\n");
+}
+document.addEventListener("keydown", function(ev){
+  if (ev.ctrlKey && ev.shiftKey && (ev.key === "D" || ev.key === "d")){
+    ev.preventDefault();
+    $("texto-docente").textContent = registroDocente();
+    $("velo-docente").classList.add("visible");
+  }
+  if (ev.key === "Escape") $("velo-docente").classList.remove("visible");
+});
+document.addEventListener("DOMContentLoaded", function(){
+  $("btn-cerrar-docente").addEventListener("click", function(){ $("velo-docente").classList.remove("visible"); });
+});
+function render(){
+  switch (S.fase){
+    case "intro":    renderIntro(); break;
+    case "dossier":  renderDossier(); break;
+    case "ventanal": renderVentanal(); break;
+    case "cierre":   renderCierre(); break;
+    default:         renderIntro();
+  }
+  window.scrollTo(0, 0);
+}
+render();
+</script>
+</body>
+</html>
